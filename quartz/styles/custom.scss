@@ -7,3 +7,162 @@
 footer > p:first-child {
   display: none;
 }
+
+/* ---------- Home page (content/index.md has cssclasses: home) ---------- */
+
+.home-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 40px;
+  margin: 8px 0 32px;
+
+  @media all and ($mobile) {
+    flex-direction: column-reverse;
+    gap: 24px;
+    text-align: center;
+  }
+}
+
+.home-intro {
+  flex: 1;
+  min-width: 0;
+
+  h1 {
+    margin: 0 0 12px;
+    font-size: 2.2rem;
+    line-height: 1.2;
+  }
+
+  p {
+    margin: 0 0 16px;
+    color: var(--darkgray);
+  }
+}
+
+img.home-avatar {
+  width: 180px;
+  height: 180px;
+  flex-shrink: 0;
+  object-fit: cover;
+  margin: 0;
+  border-radius: 16px;
+  border: 1px solid var(--lightgray);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+
+  @media all and ($mobile) {
+    width: 140px;
+    height: 140px;
+  }
+}
+
+.link-row,
+.icon-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin: 0 0 14px;
+
+  @media all and ($mobile) {
+    justify-content: center;
+  }
+}
+
+.btn,
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--lightgray);
+  border-radius: 12px;
+  background: var(--light);
+  color: var(--dark);
+  text-decoration: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+  }
+
+  &:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--secondary) 35%, transparent);
+    outline-offset: 2px;
+  }
+}
+
+.btn {
+  padding: 10px 18px;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.btn-primary {
+  background: var(--secondary);
+  border-color: var(--secondary);
+  color: var(--light);
+}
+
+.icon-btn {
+  width: 44px;
+  height: 44px;
+
+  svg {
+    width: 20px;
+    height: 20px;
+    max-width: 20px;
+    max-height: 20px;
+  }
+}
+
+/* Quartz adds a small arrow to external links; not wanted inside buttons. */
+.icon-btn .external-icon,
+.btn .external-icon {
+  display: none;
+}
+
+/* Feed under the hero: a Bases "cards" view, see content/posts.base */
+.home .bases-view-meta,
+.home .bases-card-label {
+  display: none;
+}
+
+.home .bases-card {
+  border-left: 4px solid var(--secondary);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--secondary) 4%, var(--light));
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.home .bases-card-row[data-property="formula.when"] {
+  color: var(--gray);
+  font-size: 0.9rem;
+}
+
+.home .bases-card-row[data-property="formula.post"] {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.home .bases-cards {
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+/* the title is a normal internal link; drop Quartz's grey chip behind it */
+.home .bases-card a.internal,
+.home .bases-card a.internal:hover {
+  background: none;
+  padding: 0;
+}
+
+.home .bases-card-body {
+  padding: 18px 22px;
+}
