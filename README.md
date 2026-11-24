@@ -34,7 +34,7 @@ Other front matter: `draft: true` (never published), `unlisted: true` (published
 
 ## Safety check before every commit
 
-`scripts/check-publish.sh` runs as a git hook and blocks a commit that contains private words, secrets, large or located images, PDF metadata, unreadable or unknown file types, or symlinks. It looks at `content/` and `quartz/static/`.
+`scripts/check-publish.sh` runs as a git hook and blocks a commit that contains private words, secrets, large or located images, PDF metadata, unreadable or unknown file types, or symlinks. It looks at `content/`, `quartz/static/` and this README.
 
 One-time setup on each clone:
 
