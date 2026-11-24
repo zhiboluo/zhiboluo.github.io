@@ -47,6 +47,24 @@ printf -- '---\ntitle: x\ndate: 2026-11-24\n---\nSet publish: true later\n' > co
 post "AcmeCorp in a template" > content/templates/post.md;        expect "content/templates is skipped" 0 "OK (" "$E"; clean
 post "AcmeCorp" > content/blog/a.md;                              expect "bypass skips every check" 0 "SKIPPED" "$E" SKIP_PUBLISH_CHECK=1; clean
 
+# files the word scan cannot read, and file types that should never be published
+printf -- '---\ntitle: t\ndate: 2026-11-24\npublish: true\n---\nWorked at AcmeCorp\n' | iconv -f UTF-8 -t UTF-16LE > content/blog/a.md
+expect "UTF-16 text file blocks (word scan cannot read it)" 1 "not plain UTF-8 text" "$E"; clean
+printf 'AcmeCorp internal notes\n' | iconv -f UTF-8 -t UTF-16LE > quartz/static/note.txt
+expect "UTF-16 .txt in quartz/static blocks" 1 "not plain UTF-8 text" "$E"; clean
+printf 'PK\003\004 binary with AcmeCorp inside' > content/assets/notes.docx
+expect "unknown file type (.docx) blocks" 1 "file type is not allowed" "$E"; clean
+printf 'x' > content/assets/README
+expect "file without extension blocks" 1 "file type is not allowed" "$E"; clean
+: > content/assets/.gitkeep
+expect ".gitkeep is allowed" 0 "OK (" "$E"; clean
+head -c 6000000 /dev/zero | tr '\0' 'a' > content/assets/big.txt
+expect "6 MB text file blocks (size cap for every file)" 1 "KB (limit" "$E"; clean
+post hello > "$O/outside.md"; ln -s "$O/outside.md" content/blog/linked.md
+expect "symlink in content blocks" 1 "symlink" "$E"; clean
+post "key sk-proj-abcdefghijklmnopqrstuvwxyz0123456789ABCD" > content/blog/a.md
+expect "sk-proj OpenAI key blocks" 1 "secret-like text" "$E"; clean
+
 # word list problems must fail closed
 post hello > content/blog/a.md
 printf 'acmecorp\r\n' > "$L";                                      post "AcmeCorp" > content/blog/a.md; expect "list with Windows line ends still works" 1 "private word -> line" "$E"

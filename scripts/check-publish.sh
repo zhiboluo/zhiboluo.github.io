@@ -14,7 +14,8 @@ fi
 
 ROOT=$(git rev-parse --show-toplevel) || exit 1
 TERMS_FILE="${BANNED_TERMS_FILE:-$ROOT/.private/banned-terms.txt}"
-MAX_IMAGE_BYTES="${MAX_IMAGE_BYTES:-1048576}"   # 1 MB
+MAX_IMAGE_BYTES="${MAX_IMAGE_BYTES:-1048576}"   # 1 MB per image
+MAX_FILE_BYTES="${MAX_FILE_BYTES:-5242880}"     # 5 MB for every other file
 fail=0
 
 tmp=$(mktemp -d) || exit 1
@@ -58,7 +59,7 @@ fi
 SECRET_RE='-----BEGIN [A-Z ]*PRIVATE KEY-----'
 SECRET_RE+='|(password|passwd|secret|api[_-]?key|token|aws[_-]?secret[_-]?access[_-]?key)[[:space:]]*[:=][[:space:]]*[^[:space:]]{6,}'
 SECRET_RE+='|ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|gh[ousr]_[A-Za-z0-9]{20,}|glpat-[A-Za-z0-9_-]{10,}'
-SECRET_RE+='|sk-ant-[A-Za-z0-9_-]{20,}|sk-[A-Za-z0-9]{32,}|xox[baprs]-[A-Za-z0-9-]{10,}|AKIA[0-9A-Z]{16}'
+SECRET_RE+='|sk-ant-[A-Za-z0-9_-]{20,}|sk-(proj-|svcacct-|admin-)?[A-Za-z0-9_-]{32,}|xox[baprs]-[A-Za-z0-9-]{10,}|AKIA[0-9A-Z]{16}'
 SECRET_RE+='|(^|[^0-9.])(10\.[0-9]{1,3}|192\.168|172\.(1[6-9]|2[0-9]|3[01]))\.[0-9]{1,3}\.[0-9]{1,3}([^0-9]|$)'
 
 # -z and quotepath=false: file names with spaces or non-ASCII characters (for example Chinese) arrive intact.
@@ -90,6 +91,42 @@ for f in "${files[@]}"; do
 
   if ! size=$(git cat-file -s ":$f" 2>/dev/null); then
     echo "BLOCK  $f: cannot read the staged file"; fail=1; continue
+  fi
+
+  # Symlinks and submodules: the staged content is only a path or a commit id, so nothing here can be scanned,
+  # yet Quartz would publish what they point to.
+  mode=$(git --literal-pathspecs ls-files -s -- "$f" | cut -c1-6)
+  case "$mode" in
+    120000) echo "BLOCK  $f: symlinks are not allowed here (the target would be published unchecked). Copy the file instead."; fail=1; continue ;;
+    160000) echo "BLOCK  $f: submodules are not allowed here."; fail=1; continue ;;
+  esac
+
+  # Only known file types may be published. Anything else (.docx, .zip, no extension, ...) cannot be scanned for words.
+  # To allow another type, add it to one of the lists below AND add a test for it.
+  base=${f##*/}
+  [ "$base" = ".gitkeep" ] && continue
+  kind=other
+  case "${f,,}" in
+    *.md|*.markdown|*.txt|*.base|*.canvas|*.json|*.yaml|*.yml|*.css|*.scss|*.js|*.html|*.xml|*.csv|*.svg) kind=text ;;
+    *.png|*.jpg|*.jpeg|*.jfif|*.gif|*.webp|*.avif|*.heic|*.bmp|*.tif|*.tiff|*.ico) kind=image ;;
+    *.pdf) kind=pdf ;;
+  esac
+  if [ "$kind" = other ]; then
+    echo "BLOCK  $f: file type is not allowed (it cannot be scanned for private words). Convert it to Markdown, an image or a PDF."; fail=1; continue
+  fi
+
+  # Size cap for every file (images have their own, lower cap below).
+  if [ "$kind" != image ] && [ "$size" -gt "$MAX_FILE_BYTES" ]; then
+    echo "BLOCK  $f: file is $((size/1024)) KB (limit $((MAX_FILE_BYTES/1024)) KB)."; fail=1
+  fi
+
+  # A text file with NUL bytes (typically UTF-16 saved by a Windows editor) is skipped by grep as "binary",
+  # which would let private words through unscanned. Refuse it instead of skipping it silently.
+  if [ "$kind" = text ]; then
+    nuls=$(git show ":$f" | head -c 8192 | tr -cd '\000' | wc -c)
+    if [ "${nuls:-0}" -gt 0 ]; then
+      echo "BLOCK  $f: not plain UTF-8 text (it contains NUL bytes, probably UTF-16). Re-save it as UTF-8."; fail=1; continue
+    fi
   fi
 
   case "${f,,}" in
