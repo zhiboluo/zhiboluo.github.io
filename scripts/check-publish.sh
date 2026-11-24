@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Pre-commit check for files that will become public.
-# Looks at STAGED files under content/ and quartz/static/ (both are published as-is).
+# Looks at STAGED files under content/ and quartz/static/ (both are published as-is) and at the root README.md
+# (public on GitHub).
 #
 # Bypass once (for example the CV, where the employer name is intended):
 #   SKIP_PUBLISH_CHECK=1 git commit ...
@@ -63,7 +64,7 @@ SECRET_RE+='|sk-ant-[A-Za-z0-9_-]{20,}|sk-(proj-|svcacct-|admin-)?[A-Za-z0-9_-]{
 SECRET_RE+='|(^|[^0-9.])(10\.[0-9]{1,3}|192\.168|172\.(1[6-9]|2[0-9]|3[01]))\.[0-9]{1,3}\.[0-9]{1,3}([^0-9]|$)'
 
 # -z and quotepath=false: file names with spaces or non-ASCII characters (for example Chinese) arrive intact.
-mapfile -d '' -t files < <(git -c core.quotepath=false diff --cached --name-only -z --diff-filter=ACMR -- content quartz/static)
+mapfile -d '' -t files < <(git -c core.quotepath=false diff --cached --name-only -z --diff-filter=ACMR -- content quartz/static README.md)
 [ "${#files[@]}" -eq 0 ] && exit 0
 
 have_exiftool=0; command -v exiftool >/dev/null 2>&1 && have_exiftool=1
@@ -161,6 +162,7 @@ for f in "${files[@]}"; do
   scan "secret-like text" "$f" -e "$SECRET_RE"
 
   case "$f" in
+    README.md) ;;   # the repository README is not a Quartz page
     *.md)
       # Only look inside the first front-matter block.
       fm=$(git show ":$f" | awk 'NR==1 && $0!="---"{exit} NR>1 && $0=="---"{exit} NR>1{print}')

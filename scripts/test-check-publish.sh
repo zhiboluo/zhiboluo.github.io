@@ -15,7 +15,7 @@ post() { printf -- '---\ntitle: t\ndate: 2026-11-24\npublish: true\n---\n%s\n' "
 # A test that expects a block must also see the RIGHT reason, otherwise it could pass for the wrong one.
 expect() {
   local name=$1 want=$2 needle=$3; shift 3
-  git add -A -f -- content quartz/static 2>/dev/null
+  git add -A -f -- content quartz/static 2>/dev/null; if [ -e README.md ]; then git add -f README.md; fi
   env "$@" ./scripts/check-publish.sh >"$T/.out" 2>&1; local rc=$?
   git reset -q
   if [ "$rc" -eq "$want" ] && { [ -z "$needle" ] || grep -qF -- "$needle" "$T/.out"; }; then
@@ -24,7 +24,7 @@ expect() {
     failed=$((failed+1)); echo "FAIL  $name (exit $rc, wanted $want, needle: '$needle')"; sed 's/^/        /' "$T/.out" | head -5
   fi
 }
-clean() { rm -rf content/blog/* content/assets/* quartz/static/* content/templates/*; }
+clean() { rm -rf content/blog/* content/assets/* quartz/static/* content/templates/* README.md; }
 L="$O/terms.txt"; printf '# comment\nacmecorp\n\n\\.internal\\.\n' > "$L"
 E="BANNED_TERMS_FILE=$L"
 
@@ -97,6 +97,12 @@ PY
 else
   echo "skip  metadata tests: exiftool is not installed"
 fi
+
+# the README at the repository root is public too
+printf '# Notes\nI work at AcmeCorp\n' > README.md
+expect "private word in README.md blocks" 1 "README.md: private word" "$E"; clean
+printf '# Notes\nNothing private here\n' > README.md
+expect "clean README.md passes" 0 "OK (" "$E"; clean
 
 # word list problems must fail closed
 post hello > content/blog/a.md
