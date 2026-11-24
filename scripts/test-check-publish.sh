@@ -65,6 +65,39 @@ expect "symlink in content blocks" 1 "symlink" "$E"; clean
 post "key sk-proj-abcdefghijklmnopqrstuvwxyz0123456789ABCD" > content/blog/a.md
 expect "sk-proj OpenAI key blocks" 1 "secret-like text" "$E"; clean
 
+# image and PDF metadata (needs exiftool; skipped with a notice if it is missing)
+if command -v exiftool >/dev/null 2>&1; then
+  # a tiny valid JPEG and PDF built here, so the test needs no outside files
+  python3 - "$O" <<'PY'
+import sys, base64
+o = sys.argv[1]
+open(o + "/clean.jpg", "wb").write(base64.b64decode(
+  "/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMDAsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/"
+  "wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAAB//EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q=="))
+objs = [b"<< /Type /Catalog /Pages 2 0 R >>", b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 100] >>"]
+out = b"%PDF-1.4\n"; offs = []
+for i, ob in enumerate(objs, 1):
+    offs.append(len(out)); out += b"%d 0 obj\n" % i + ob + b"\nendobj\n"
+x = len(out)
+out += b"xref\n0 4\n0000000000 65535 f \n" + b"".join(b"%010d 00000 n \n" % q for q in offs)
+out += b"trailer\n<< /Size 4 /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n" % x
+open(o + "/clean.pdf", "wb").write(out)
+PY
+  cp "$O/clean.jpg" content/assets/clean.jpg
+  expect "image without GPS passes (exiftool present)" 0 "OK (" "$E"; clean
+  cp "$O/clean.jpg" content/assets/gps.jpg
+  exiftool -q -overwrite_original -GPSLatitude=49.3 -GPSLatitudeRef=N -GPSLongitude=123.1 -GPSLongitudeRef=W content/assets/gps.jpg
+  expect "image with GPS data blocks" 1 "GPS location data" "$E"; clean
+  cp "$O/clean.pdf" quartz/static/clean.pdf
+  expect "PDF without metadata passes with a warning" 0 "PDF text is not scanned" "$E"; clean
+  cp "$O/clean.pdf" quartz/static/meta.pdf
+  exiftool -q -overwrite_original -Author="Someone" -Producer="Some Tool" quartz/static/meta.pdf
+  expect "PDF with author metadata blocks" 1 "author/creator/producer metadata" "$E"; clean
+else
+  echo "skip  metadata tests: exiftool is not installed"
+fi
+
 # word list problems must fail closed
 post hello > content/blog/a.md
 printf 'acmecorp\r\n' > "$L";                                      post "AcmeCorp" > content/blog/a.md; expect "list with Windows line ends still works" 1 "private word -> line" "$E"
