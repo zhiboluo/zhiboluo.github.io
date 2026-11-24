@@ -28,8 +28,11 @@ export default (() => {
     const iconPath = joinSegments(baseDir, "static/icon.png")
 
     // Url of current page
+    // Local change (zhiboluo.github.io): the home page and folder pages are served at "/" and "/blog/",
+    // not at "/index" and "/blog/index", so the canonical address drops a trailing "index".
+    const publicSlug = fileData.slug === "index" ? "" : fileData.slug!.replace(/\/index$/, "/")
     const socialUrl =
-      fileData.slug === "404" ? url.toString() : joinSegments(url.toString(), fileData.slug!)
+      fileData.slug === "404" ? url.toString() : joinSegments(url.toString(), publicSlug)
 
     const usesCustomOgImage = ctx.cfg.plugins.emitters.some((e) => e.name === "CustomOgImages")
     const ogImageDefaultPath = `https://${cfg.baseUrl}/static/og-image.png`
