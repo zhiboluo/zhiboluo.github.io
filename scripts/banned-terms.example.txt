@@ -1,0 +1,15 @@
+# EXAMPLE ONLY. Your real list goes in .private/banned-terms.txt (git-ignored, never committed).
+# One regular expression per line (extended syntax, case-insensitive). Lines starting with # are comments.
+# Keep an eye on false positives: every word here blocks the commit.
+
+# internal host names
+\.internal\.
+\.corp\b
+# confidentiality markers
+confidential
+internal use only
+do not distribute
+# a company e-mail domain (replace with yours)
+@example-company\.com
+# ticket ids such as ABCD-1234 (replace the prefixes with the ones you use)
+\b(PROJ|TASK)-[0-9]{2,}\b

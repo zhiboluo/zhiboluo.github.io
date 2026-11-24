@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Runs scripts/check-publish.sh before every commit. Turn on once per clone:
+#   git config core.hooksPath .githooks
+exec "$(git rev-parse --show-toplevel)/scripts/check-publish.sh"

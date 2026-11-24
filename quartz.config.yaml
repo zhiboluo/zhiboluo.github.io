@@ -6,6 +6,7 @@ configuration:
   enablePopovers: true
   analytics: null
   locale: en-US
+  publishAssets: referenced
   baseUrl: zhiboluo.github.io
   ignorePatterns:
     - private
@@ -100,7 +101,7 @@ plugins:
       theme: tokyo-night
       mode: both
   - source: "@quartz-community/explicit-publish"
-    enabled: false
+    enabled: true
   - source: "@quartz-community/unlisted-pages"
     enabled: true
     options: {}
