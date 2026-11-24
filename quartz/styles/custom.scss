@@ -1,3 +1,9 @@
 @use "./variables.scss" as *;
 
 // put your custom CSS here!
+
+// Hide the "Created with Quartz vX © year" line in the footer.
+// The footer plugin has no option for it; the message line below it stays.
+footer > p:first-child {
+  display: none;
+}
