@@ -1,0 +1,20 @@
+filters:
+  and:
+    - file.folder == "blog"
+    - file.name != "index"
+formulas:
+  post: 'link(file.path, title)'
+properties:
+  formula.post:
+    displayName: " "
+views:
+  - type: cards
+    name: Latest
+    limit: 3
+    sort:
+      - property: date
+        direction: DESC
+    order:
+      - formula.post
+      - date
+      - description
