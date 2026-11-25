@@ -2,6 +2,7 @@
 title: "Building a portfolio that answers questions"
 description: "A personal portfolio where a visitor pastes a job description, gets a tailored resume, and then chats with an AI that answers from structured entries about my experience."
 date: 2026-11-25
+updated: 2026-11-25
 tags: [project, ai-agents, rag]
 publish: true
 ---
@@ -32,7 +33,7 @@ The web app talks to one API. The API has two agents, one for resumes and one fo
 
 The knowledge base is a set of short structured entries: a title, a description, a list of skills, a category and a line about impact. Each entry is turned into a vector by an embedding model and stored in Postgres with the pgvector extension, hosted on Supabase. Small structured entries are easy to retrieve, rank and count, and that's how the skill chart works.
 
-When a visitor pastes a job description, the API hashes it, embeds it and checks a cache at the same time. It then asks the database for the closest entries, counts the skills across them for the chart, and gives the entries and the job description to a language model with one strict instruction: use only the provided experience and never invent anything. The result is cached under the hash, so the same posting doesn't need a second model call.
+When a visitor pastes a job description, the API hashes it, embeds it and checks a cache at the same time. It then asks the database for the closest entries, counts the skills across them for the chart, and gives the entries and the job description to a language model with one strict instruction: use only the provided experience and never invent anything. The result is cached under the hash, so the same posting doesn't need a second model call. For now the cache never expires.
 
 The interview works a little differently. For each question the API retrieves the five closest entries and attaches them to the question, but only in the copy it sends to the model. The stored chat history keeps the plain question, so the history stays small and the context is fresh on every turn. Answers stream back over server-sent events, and sessions live in memory for an hour.
 
