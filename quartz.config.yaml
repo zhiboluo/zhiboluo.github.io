@@ -215,7 +215,7 @@ plugins:
   - source: "@quartz-community/footer"
     enabled: true
     options:
-      message: "© 2026 Zhibo Luo. All rights reserved."
+      message: "© 2026 Zhibo Luo. All rights reserved. Visits are counted with cookie-free GoatCounter."
       links:
         GitHub: https://github.com/zhiboluo
     layout:

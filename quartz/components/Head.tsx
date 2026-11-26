@@ -37,6 +37,12 @@ export default (() => {
     const usesCustomOgImage = ctx.cfg.plugins.emitters.some((e) => e.name === "CustomOgImages")
     const ogImageDefaultPath = `https://${cfg.baseUrl}/static/og-image.png`
 
+    // Local change: only advertise the feed when the content index emits it
+    const rssEnabled =
+      typeof cfg.contentIndex === "object"
+        ? cfg.contentIndex.enableRSS !== false && cfg.contentIndex.enabled !== false
+        : cfg.contentIndex !== false
+
     const coreStylesheet = css[0]?.content
     const coreScript = js.find(
       (r) => r.loadTime === "beforeDOMReady" && r.contentType === "external",
@@ -93,6 +99,33 @@ export default (() => {
         )}
 
         <link rel="icon" href={iconPath} />
+        {/* Local change (zhiboluo.github.io): RSS autodiscovery, so feed readers can find /index.xml */}
+        {cfg.baseUrl && rssEnabled && (
+          <link
+            rel="alternate"
+            type="application/rss+xml"
+            title="RSS Feed"
+            href={`https://${cfg.baseUrl}/index.xml`}
+          />
+        )}
+        {/* Local change: basic Person markup on the home page only (name, URL and the two profile links already shown there) */}
+        {fileData.slug === "index" && cfg.baseUrl && (
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify({
+                "@context": "https://schema.org",
+                "@type": "Person",
+                name: "Zhibo Luo",
+                url: `https://${cfg.baseUrl}/`,
+                sameAs: [
+                  "https://github.com/zhiboluo",
+                  "https://www.linkedin.com/in/zhibo-luo-9051b69b/",
+                ],
+              }),
+            }}
+          />
+        )}
         <meta name="description" content={description} />
         <meta name="generator" content="Quartz" />
 
